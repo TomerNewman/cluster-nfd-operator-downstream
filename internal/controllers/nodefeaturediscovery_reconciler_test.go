@@ -31,7 +31,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/record"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -192,7 +191,7 @@ var _ = Describe("handleMaster", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, nil, nil, nil, scheme, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -261,7 +260,7 @@ var _ = Describe("handleWorker", func() {
 		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
 		mockCM = configmap.NewMockConfigMapAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, mockCM, nil, nil, nil, nil, scheme, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, mockCM, nil, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -357,7 +356,7 @@ var _ = Describe("handleTopology", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDS = daemonset.NewMockDaemonsetAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, nil, nil, nil, nil, nil, scheme, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, mockDS, nil, nil, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -442,7 +441,7 @@ var _ = Describe("handleGC", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockDeployment = deployment.NewMockDeploymentAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, nil, nil, nil, scheme, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, nil, nil, nil, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -509,7 +508,7 @@ var _ = Describe("handleNetworkPolicies", func() {
 		clnt = client.NewMockClient(ctrl)
 		mockNP = networkpolicy.NewMockNetworkPolicyAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, mockNP, nil, scheme, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, mockNP, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -577,7 +576,7 @@ var _ = Describe("handleNetworkPolicies", func() {
 
 var _ = Describe("hasFinalizer", func() {
 	It("checking return status whether finalizer set or not", func() {
-		nfdh := newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		nfdh := newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		By("finalizers was empty")
 		nfdCR := nfdv1.NodeFeatureDiscovery{
@@ -621,7 +620,7 @@ var _ = Describe("setFinalizer", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		clnt = client.NewMockClient(ctrl)
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, nil, nil, nil)
 	})
 
 	It("checking the return status of setFinalizer function", func() {
@@ -684,7 +683,7 @@ var _ = Describe("finalizeComponents", func() {
 		mockSCC = scc.NewMockSccAPI(ctrl)
 		mockNP = networkpolicy.NewMockNetworkPolicyAPI(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, mockDS, mockCM, nil, mockSCC, mockNP, nil, scheme, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, mockDeployment, mockDS, mockCM, nil, mockSCC, mockNP, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -783,7 +782,7 @@ var _ = Describe("removeFinalizer", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		clnt = client.NewMockClient(ctrl)
 
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, nil, nil, scheme, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -827,7 +826,7 @@ var _ = Describe("handlePrune", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockJob = job.NewMockJobAPI(ctrl)
-		nfdh = newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, mockJob, nil, nil, nil, scheme, nil)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(nil, nil, nil, nil, mockJob, nil, nil, nil, scheme)
 	})
 
 	ctx := context.Background()
@@ -914,7 +913,6 @@ var _ = Describe("handleStatus", func() {
 		ctrl       *gomock.Controller
 		clnt       *client.MockClient
 		mockStatus *status.MockStatusAPI
-		recorder   *record.FakeRecorder
 		nfdh       nodeFeatureDiscoveryHelperAPI
 	)
 
@@ -922,8 +920,7 @@ var _ = Describe("handleStatus", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		clnt = client.NewMockClient(ctrl)
 		mockStatus = status.NewMockStatusAPI(ctrl)
-		recorder = record.NewFakeRecorder(10)
-		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, nil, mockStatus, scheme, recorder)
+		nfdh = newNodeFeatureDiscoveryHelperAPI(clnt, nil, nil, nil, nil, nil, nil, mockStatus, scheme)
 	})
 
 	ctx := context.Background()
@@ -937,7 +934,7 @@ var _ = Describe("handleStatus", func() {
 	It("conditions are equal, no status update is needed", func() {
 		gomock.InOrder(
 			mockStatus.EXPECT().GetConditions(ctx, &nfdCR).Return(newConditions),
-			mockStatus.EXPECT().AreConditionsEqual(nfdCR.Status.Conditions, newConditions).Return(true),
+			mockStatus.EXPECT().AreConditionsEqual(newConditions, nfdCR.Status.Conditions).Return(true),
 		)
 
 		err := nfdh.handleStatus(ctx, &nfdCR)
@@ -953,7 +950,7 @@ var _ = Describe("handleStatus", func() {
 		}
 		gomock.InOrder(
 			mockStatus.EXPECT().GetConditions(ctx, &nfdCR).Return(newConditions),
-			mockStatus.EXPECT().AreConditionsEqual(nfdCR.Status.Conditions, newConditions).Return(false),
+			mockStatus.EXPECT().AreConditionsEqual(newConditions, nfdCR.Status.Conditions).Return(false),
 			clnt.EXPECT().Status().Return(statusWriter),
 			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(nil),
 		)
@@ -971,157 +968,13 @@ var _ = Describe("handleStatus", func() {
 		}
 		gomock.InOrder(
 			mockStatus.EXPECT().GetConditions(ctx, &nfdCR).Return(newConditions),
-			mockStatus.EXPECT().AreConditionsEqual(nfdCR.Status.Conditions, newConditions).Return(false),
+			mockStatus.EXPECT().AreConditionsEqual(newConditions, nfdCR.Status.Conditions).Return(false),
 			clnt.EXPECT().Status().Return(statusWriter),
 			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(fmt.Errorf("some error")),
 		)
 
 		err := nfdh.handleStatus(ctx, &nfdCR)
 		Expect(err).To(HaveOccurred())
-	})
-
-	It("emits a Warning event when OperandImagePinned newly becomes True, only after the status patch succeeds", func() {
-		pinnedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{Conditions: []metav1.Condition{}},
-		}
-		newConds := []metav1.Condition{
-			{Type: status.ConditionOperandImagePinned, Status: metav1.ConditionTrue, Reason: "OperandImageSetExplicitly", Message: "pinned to some-image"},
-		}
-		expectedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{Conditions: newConds},
-		}
-		statusWriter := client.NewMockStatusWriter(ctrl)
-		gomock.InOrder(
-			mockStatus.EXPECT().GetConditions(ctx, &pinnedNFD).Return(newConds),
-			mockStatus.EXPECT().AreConditionsEqual(pinnedNFD.Status.Conditions, newConds).Return(false),
-			clnt.EXPECT().Status().Return(statusWriter),
-			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(nil),
-		)
-
-		err := nfdh.handleStatus(ctx, &pinnedNFD)
-		Expect(err).To(BeNil())
-
-		Eventually(recorder.Events).Should(Receive(ContainSubstring("pinned to some-image")))
-	})
-
-	It("does not emit the event if the status patch fails", func() {
-		pinnedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{Conditions: []metav1.Condition{}},
-		}
-		newConds := []metav1.Condition{
-			{Type: status.ConditionOperandImagePinned, Status: metav1.ConditionTrue, Reason: "OperandImageSetExplicitly", Message: "pinned to some-image"},
-		}
-		expectedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{Conditions: newConds},
-		}
-		statusWriter := client.NewMockStatusWriter(ctrl)
-		gomock.InOrder(
-			mockStatus.EXPECT().GetConditions(ctx, &pinnedNFD).Return(newConds),
-			mockStatus.EXPECT().AreConditionsEqual(pinnedNFD.Status.Conditions, newConds).Return(false),
-			clnt.EXPECT().Status().Return(statusWriter),
-			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(fmt.Errorf("some error")),
-		)
-
-		err := nfdh.handleStatus(ctx, &pinnedNFD)
-		Expect(err).To(HaveOccurred())
-
-		Consistently(recorder.Events).ShouldNot(Receive())
-	})
-
-	It("does not re-emit the event once OperandImagePinned is already True", func() {
-		alreadyPinnedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{
-				Conditions: []metav1.Condition{
-					{Type: status.ConditionOperandImagePinned, Status: metav1.ConditionTrue, Reason: "OperandImageSetExplicitly", Message: "pinned to some-image"},
-				},
-			},
-		}
-		newConds := alreadyPinnedNFD.Status.Conditions
-		mockStatus.EXPECT().GetConditions(ctx, &alreadyPinnedNFD).Return(newConds)
-		mockStatus.EXPECT().AreConditionsEqual(alreadyPinnedNFD.Status.Conditions, newConds).Return(true)
-
-		err := nfdh.handleStatus(ctx, &alreadyPinnedNFD)
-		Expect(err).To(BeNil())
-
-		Consistently(recorder.Events).ShouldNot(Receive())
-	})
-
-	It("does not re-emit the event when conditions change for an unrelated reason but OperandImagePinned was already True", func() {
-		pinnedCond := metav1.Condition{Type: status.ConditionOperandImagePinned, Status: metav1.ConditionTrue, Reason: "OperandImageSetExplicitly", Message: "pinned to some-image"}
-		alreadyPinnedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{
-				Conditions: []metav1.Condition{pinnedCond},
-			},
-		}
-		newConds := []metav1.Condition{
-			{Type: "Available", Status: metav1.ConditionFalse, Reason: "SomeFailure"},
-			pinnedCond,
-		}
-		expectedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{Conditions: newConds},
-		}
-		statusWriter := client.NewMockStatusWriter(ctrl)
-		gomock.InOrder(
-			mockStatus.EXPECT().GetConditions(ctx, &alreadyPinnedNFD).Return(newConds),
-			mockStatus.EXPECT().AreConditionsEqual(alreadyPinnedNFD.Status.Conditions, newConds).Return(false),
-			clnt.EXPECT().Status().Return(statusWriter),
-			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(nil),
-		)
-
-		err := nfdh.handleStatus(ctx, &alreadyPinnedNFD)
-		Expect(err).To(BeNil())
-
-		Consistently(recorder.Events).ShouldNot(Receive())
-	})
-
-	It("does not emit an event when OperandImagePinned transitions from True to False (image un-pinned)", func() {
-		previouslyPinnedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{
-				Conditions: []metav1.Condition{
-					{Type: status.ConditionOperandImagePinned, Status: metav1.ConditionTrue, Reason: "OperandImageSetExplicitly", Message: "pinned to old-image"},
-				},
-			},
-		}
-		newConds := []metav1.Condition{
-			{Type: status.ConditionOperandImagePinned, Status: metav1.ConditionFalse, Reason: "OperandImageManagedByOperator"},
-		}
-		expectedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{Conditions: newConds},
-		}
-		statusWriter := client.NewMockStatusWriter(ctrl)
-		gomock.InOrder(
-			mockStatus.EXPECT().GetConditions(ctx, &previouslyPinnedNFD).Return(newConds),
-			mockStatus.EXPECT().AreConditionsEqual(previouslyPinnedNFD.Status.Conditions, newConds).Return(false),
-			clnt.EXPECT().Status().Return(statusWriter),
-			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(nil),
-		)
-
-		err := nfdh.handleStatus(ctx, &previouslyPinnedNFD)
-		Expect(err).To(BeNil())
-
-		Consistently(recorder.Events).ShouldNot(Receive())
-	})
-
-	It("emits a Warning event when OperandImagePinned newly becomes True, even from a nil (never-set) Status.Conditions", func() {
-		pinnedNFD := nfdv1.NodeFeatureDiscovery{}
-		newConds := []metav1.Condition{
-			{Type: status.ConditionOperandImagePinned, Status: metav1.ConditionTrue, Reason: "OperandImageSetExplicitly", Message: "pinned to some-image"},
-		}
-		expectedNFD := nfdv1.NodeFeatureDiscovery{
-			Status: nfdv1.NodeFeatureDiscoveryStatus{Conditions: newConds},
-		}
-		statusWriter := client.NewMockStatusWriter(ctrl)
-		gomock.InOrder(
-			mockStatus.EXPECT().GetConditions(ctx, &pinnedNFD).Return(newConds),
-			mockStatus.EXPECT().AreConditionsEqual(pinnedNFD.Status.Conditions, newConds).Return(false),
-			clnt.EXPECT().Status().Return(statusWriter),
-			statusWriter.EXPECT().Patch(ctx, &expectedNFD, gomock.Any()).Return(nil),
-		)
-
-		err := nfdh.handleStatus(ctx, &pinnedNFD)
-		Expect(err).To(BeNil())
-
-		Eventually(recorder.Events).Should(Receive(ContainSubstring("pinned to some-image")))
 	})
 })
 
